@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initFAQ();
     initContactForm();
     initScrollToTop();
+    initLazyLoading();
+    initActiveNav();
+    enhancedSmoothScroll();
 });
 
 function hidePreloader() {
@@ -34,13 +37,19 @@ function initNavbar() {
 
     if (hamburger) {
         hamburger.addEventListener('click', () => {
-            navMenu.classList.toggle('active');
+            const isActive = navMenu.classList.toggle('active');
+            hamburger.classList.toggle('active');
+            hamburger.setAttribute('aria-expanded', isActive);
+            navMenu.setAttribute('aria-hidden', !isActive);
         });
     }
 
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             navMenu.classList.remove('active');
+            hamburger.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            navMenu.setAttribute('aria-hidden', 'true');
         });
     });
 }
@@ -235,7 +244,7 @@ function initPortfolio() {
     const cards = Array.from(document.querySelectorAll('.portfolio-card'));
     if (!cards.length) return;
 
-    cards.forEach(card => {
+    cards.forEach((card, index) => {
         const toggle = card.querySelector('.portfolio-toggle');
         const details = card.querySelector('.portfolio-details');
         const closeBtn = card.querySelector('.close-portfolio');
@@ -280,6 +289,7 @@ function initPortfolio() {
             });
         }
 
+        // Enhanced keyboard navigation
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -287,6 +297,16 @@ function initPortfolio() {
                 else openCard();
             }
             if (e.key === 'Escape') closeCard();
+            
+            // Arrow key navigation between cards
+            if (e.key === 'ArrowRight' && index < cards.length - 1) {
+                e.preventDefault();
+                cards[index + 1].focus();
+            }
+            if (e.key === 'ArrowLeft' && index > 0) {
+                e.preventDefault();
+                cards[index - 1].focus();
+            }
         });
     });
 
@@ -420,27 +440,83 @@ function initFAQ() {
 
 function initContactForm() {
     const form = document.getElementById('contactForm');
+    const inputs = form.querySelectorAll('.form-input');
+
+    // Real-time validation
+    function validateField(field) {
+        const errorMsg = field.nextElementSibling;
+        if (errorMsg && errorMsg.classList.contains('error-message')) {
+            errorMsg.remove();
+        }
+        
+        field.classList.remove('error');
+        
+        if (field.hasAttribute('required') && !field.value.trim()) {
+            showError(field, 'This field is required');
+            return false;
+        }
+        
+        if (field.type === 'email' && field.value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(field.value)) {
+                showError(field, 'Please enter a valid email address');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    function showError(field, message) {
+        field.classList.add('error');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        field.parentNode.insertBefore(errorDiv, field.nextSibling);
+    }
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', () => validateField(input));
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error')) {
+                validateField(input);
+            }
+        });
+    });
 
     form.addEventListener('submit', (e) => {
         e.preventDefault();
+        
+        let isValid = true;
+        inputs.forEach(input => {
+            if (!validateField(input)) {
+                isValid = false;
+            }
+        });
+        
+        if (!isValid) {
+            return;
+        }
 
         const formData = new FormData(form);
         const data = Object.fromEntries(formData);
-
-        console.log('Form submitted:', data);
 
         const button = form.querySelector('button[type="submit"]');
         const originalText = button.textContent;
         button.textContent = 'Sending...';
         button.disabled = true;
+        button.classList.add('sending');
 
         setTimeout(() => {
             button.textContent = 'Message Sent Successfully!';
+            button.classList.remove('sending');
+            button.classList.add('success');
             form.reset();
 
             setTimeout(() => {
                 button.textContent = originalText;
                 button.disabled = false;
+                button.classList.remove('success');
             }, 3000);
         }, 1500);
     });
@@ -503,4 +579,79 @@ function initScrollToTop() {
 
         progressBar.style.height = `${scrollPercentage}%`;
     });
+}
+
+// Enhanced smooth scrolling with navbar offset
+function enhancedSmoothScroll() {
+    const navLinks = document.querySelectorAll('a[href^="#"]');
+    const navbarHeight = document.querySelector('.navbar').offsetHeight;
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (href === '#' || !href) return;
+            
+            e.preventDefault();
+            const targetId = href.substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                const targetPosition = targetElement.offsetTop - navbarHeight;
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+}
+
+// Lazy loading for images
+function initLazyLoading() {
+    const images = document.querySelectorAll('img[data-src]');
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                observer.unobserve(img);
+            }
+        });
+    }, {
+        rootMargin: '50px'
+    });
+    
+    images.forEach(img => imageObserver.observe(img));
+}
+
+// Active navigation highlighting
+function initActiveNav() {
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    function highlightNav() {
+        let currentSection = '';
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            const scrollPosition = window.scrollY + 100;
+            
+            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                currentSection = section.getAttribute('id');
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${currentSection}`) {
+                link.classList.add('active');
+            }
+        });
+    }
+    
+    window.addEventListener('scroll', highlightNav);
+    highlightNav(); // Call once on load
 }
