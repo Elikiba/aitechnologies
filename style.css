@@ -1863,11 +1863,6 @@ textarea.form-input {
         margin-bottom: calc(var(--spacing-unit) * 3);
     }
     
-    .carousel-navigation {
-        flex-direction: column;
-        gap: calc(var(--spacing-unit) * 4);
-    }
-    
     .testimonial-counter {
         position: static;
         margin-top: calc(var(--spacing-unit) * 3);
