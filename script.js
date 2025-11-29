@@ -545,7 +545,7 @@ function initScrollToTop() {
         opacity: 0;
         transform: translateY(20px);
         transition: all 0.3s ease;
-        z-index: 8;
+        z-index: 9;
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     `;
 
