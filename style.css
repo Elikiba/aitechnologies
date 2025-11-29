@@ -23,7 +23,7 @@
 
 html {
     scroll-behavior: smooth;
-}
+}                                                                                                                                                
 
 body {
     font-family: "Noto Serif", "Montserrat", 'Plus Jakarta Sans', serif;
@@ -1509,7 +1509,7 @@ textarea.form-input {
     font-size: 28px;
     color: white;
     text-decoration: none;
-    z-index: 8;
+    z-index: 9;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 5px 20px rgba(37, 211, 102, 0.4);
     animation: bounce 2s ease-in-out infinite;
